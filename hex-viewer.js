@@ -93,7 +93,7 @@ var HexViewer = (function (id) {
         // length of biggest line number (in hex)
         //var lineno_length = byteView.byteLength.toString(16).length;
         var lineno_length = 7; // hard-coded 8 (including colon) in CSS
-        var lineno_pad = ' '.repeat(lineno_length);
+        var lineno_pad = '0'.repeat(lineno_length);
 
         for (var i = 0; i < byteView.byteLength; i += COLUMNS) {
             var hexLine = document.createElement('div');
@@ -126,7 +126,25 @@ var HexViewer = (function (id) {
         ascPanel.appendChild(ascFragment);
     }
 
+    function handleFilePicker(id) {
+        var fileInput = document.getElementById(id);
+        fileInput.addEventListener('change', function () {
+            if (this.files.length > 0) {
+                handleFile(this.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            var reader = FileReader();
+            reader.onload = function () {
+                loadData(this.result);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    }
+
     // exports
     this.loadData = loadData;
+    this.handleFilePicker = handleFilePicker;
 });
 /* vim: set sw=4 et ts=4: */
