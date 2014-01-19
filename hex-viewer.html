@@ -14,6 +14,7 @@
 <input type="file" id="file-picker">
 
 <script src="polyfill.js"></script>
+<script src="annotations.js"></script>
 <script src="hex-viewer.js"></script>
 <script>
 var hexViewer = new HexViewer('hex-viewer');
@@ -25,7 +26,12 @@ var testData = array_to_arraybuffer(function () {
         a[i] = i;
     return a;
 }());
-hexViewer.loadData(testData);
+//hexViewer.loadData(testData);
+loadArrayBuffer('test.bin', hexViewer.loadData.bind(hexViewer));
+loadString('test.txt', function (text) {
+    var annots = Annotations.loadFieldsizeFormat(text);
+    hexViewer.setAnnotations(annots);
+});
 
 hexViewer.handleFilePicker('file-picker');
 
@@ -36,6 +42,45 @@ function array_to_arraybuffer (arr) {
         byteView[i] = b;
     });
     return buffer;
+}
+
+function loadString(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('get', url, true);
+    xhr.onload = function () {
+        if (xhr.responseText) {
+            var len = xhr.responseText.length;
+            if (len > 1024 * 1024 &&
+                !confirm('Continue processing ' + len + ' chars?')) {
+                console.log('Aborted processing of ' + url);
+                return;
+            }
+            callback(xhr.responseText);
+        } else {
+            console.log('Cannot load text for ' + url);
+        }
+    };
+    xhr.send(null);
+}
+
+function loadArrayBuffer(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('get', url, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = function () {
+        if (xhr.response) {
+            var len = xhr.response.byteLength;
+            if (len > 1024 * 1024 &&
+                !confirm('Continue processing ' + len + ' bytes?')) {
+                console.log('Aborted processing of ' + url);
+                return;
+            }
+            callback(xhr.response);
+        } else {
+            console.log('Cannot load ArrayBuffer for ' + url);
+        }
+    };
+    xhr.send(null);
 }
 </script>
 </body>
