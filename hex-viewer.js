@@ -4,14 +4,20 @@ var HexViewer = (function (id) {
     var COLUMNS = 16;
 
     var container = document.getElementById(id);
+    var hexascPanel = document.createElement('div');
     var hexPanel = document.createElement('div');
     var ascPanel = document.createElement('div');
     var annoPanel = document.createElement('div');
     container.className = 'hex-viewer';
+    hexascPanel.className = 'hexasc';
     hexPanel.className = 'hex';
     ascPanel.className = 'asc';
     annoPanel.className = 'annotations';
-    [hexPanel, ascPanel, annoPanel].forEach(function (panel) {
+
+    [hexPanel, ascPanel].forEach(function (panel) {
+        hexascPanel.appendChild(panel);
+    });
+    [hexascPanel, annoPanel].forEach(function (panel) {
         container.appendChild(panel);
     });
 
@@ -20,24 +26,73 @@ var HexViewer = (function (id) {
     var ascBoxes = [];
     var selectedBytes = [];
 
+    // contains HTMLElements for annotations
+    var annoLines = [];
+    // annotations object
+    var annotations;
+
     // boxes_one contains the event source element
-    function addSelecter(targetContainer, boxes_one, boxes_two) {
+    function addSelecter(src_boxes) {
         return function (ev) {
-            var byte_no = boxes_one.indexOf(ev.target);
+            var byte_no = src_boxes.indexOf(ev.target);
             if (byte_no == -1) {
                 return;
             }
-            boxes_two[byte_no].classList.add('hover');
+            hiliteBits(8 * byte_no, 8);
         };
     }
 
-    function clearSelecter(target) {
-        return function () {
-            var affected = target.getElementsByClassName('hover');
-            for (var i = affected.length - 1; i >= 0; --i) {
-                affected[i].classList.remove('hover');
+    // highlight the bytes that share a bit with the slice (if the annotation
+    // falls outside the slice, extend the slice)
+    function hiliteBits(offset_bit, bits) {
+        var startByte, endByte;
+        var end_bit = offset_bit + bits;
+        if (annotations) {
+            var annots = annotations.getAnnotations();
+            // annotation indexes
+            var i, begin = Infinity, end = annots.length - 1;
+            // find begin of annotations
+            for (i = 0; i < annots.length; ++i) {
+                // if end of annotation lays in the slice (after begin of slice)
+                if (annots[i].offset + annots[i].length > offset_bit) {
+                    // check if annotation is actually in the slice (i.e. if the
+                    // annotation starts before the end of the slice)
+                    if (annots[i].offset < end_bit) {
+                        begin = i;
+                    }
+                    break;
+                }
             }
-        };
+            // if there are annotations in range, find the end
+            if (begin <= end) {
+                for (; i < annots.length; ++i) {
+                    if (annots[i].offset >= end_bit) {
+                        // end is last annotation that is contained in slice
+                        end = i - 1;
+                        break;
+                    }
+                }
+                offset_bit = annots[begin].offset;
+                end_bit = annots[end].offset + annots[end].length;
+            }
+            for (i = begin; i <= end; ++i) {
+                annoLines[i].classList.add('hover');
+            }
+        }
+
+        startByte = Math.floor(offset_bit / 8);
+        endByte = Math.ceil(end_bit / 8) - 1;
+        for (var byte_no = startByte; byte_no <= endByte; ++byte_no) {
+            ascBoxes[byte_no].classList.add('hover');
+            hexBoxes[byte_no].classList.add('hover');
+        }
+    }
+
+    function clearSelecter() {
+        var affected = container.getElementsByClassName('hover');
+        for (var i = affected.length - 1; i >= 0; --i) {
+            affected[i].classList.remove('hover');
+        }
     }
 
     function togglePermSelect(boxes) {
@@ -60,12 +115,22 @@ var HexViewer = (function (id) {
         };
     }
 
-    hexPanel.addEventListener('mouseover',
-        addSelecter(ascPanel, hexBoxes, ascBoxes));
-    ascPanel.addEventListener('mouseover',
-        addSelecter(hexPanel, ascBoxes, hexBoxes));
-    hexPanel.addEventListener('mouseout', clearSelecter(ascPanel));
-    ascPanel.addEventListener('mouseout', clearSelecter(hexPanel));
+    hexPanel.addEventListener('mouseover', addSelecter(hexBoxes));
+    ascPanel.addEventListener('mouseover', addSelecter(ascBoxes));
+    annoPanel.addEventListener('mouseover', function (ev) {
+        // mega-dumb quick-n-dirty impl.
+        var line = ev.target;
+        if (!line.classList.contains('line')) {
+            return;
+        }
+        var begin = Math.floor(line.dataset.offset / 8) * 8;
+        // byteEnd is the last exclusive byte
+        var len = line.dataset.byteEnd - line.dataset.byteStart + 1;
+        hiliteBits(8 * line.dataset.byteStart, 8 * len);
+    });
+    hexPanel.addEventListener('mouseout', clearSelecter);
+    ascPanel.addEventListener('mouseout', clearSelecter);
+    annoPanel.addEventListener('mouseout', clearSelecter);
     hexPanel.addEventListener('click', togglePermSelect(hexBoxes));
     ascPanel.addEventListener('click', togglePermSelect(ascBoxes));
 
@@ -84,7 +149,9 @@ var HexViewer = (function (id) {
 
         hexPanel.innerHTML = '';
         ascPanel.innerHTML = '';
-        annoPanel.innerHTML = '';
+        // cannot simply overwrite array as addSelector encapsulated it
+        hexBoxes.splice(0, hexBoxes.length);
+        ascBoxes.splice(0, ascBoxes.length);
 
         // appending directly slows down
         var hexFragment = document.createDocumentFragment();
@@ -143,8 +210,40 @@ var HexViewer = (function (id) {
         }
     }
 
+    /* annotations related stuff */
+
+    // annots is an Annotations instance
+    function setAnnotations(annots) {
+        annotations = annots;
+
+        annoPanel.innerHTML = '';
+        annoLines = [];
+
+        var annFragment = document.createDocumentFragment();
+        annots.getAnnotations().forEach(function (annot) {
+            var line = document.createElement('div');
+            line.className = 'line';
+
+            line.dataset.offset = annot.offset;
+            line.dataset.length = annot.length;
+
+            line.dataset.byteStart = Math.floor(annot.offset / 8);
+            var lastBit = annot.offset + annot.length;
+            // last byte including the annotation
+            line.dataset.byteEnd = Math.ceil(lastBit / 8) - 1;
+
+            line.textContent = annot.name + ': ' + annot.desc;
+
+            annoLines.push(line);
+            annFragment.appendChild(line);
+        });
+
+        annoPanel.appendChild(annFragment);
+    }
+
     // exports
     this.loadData = loadData;
     this.handleFilePicker = handleFilePicker;
+    this.setAnnotations = setAnnotations;
 });
 /* vim: set sw=4 et ts=4: */

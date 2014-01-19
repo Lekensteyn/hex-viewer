@@ -12,15 +12,21 @@ body {
 }
 .hex-viewer {
     margin: auto;
-    overflow-y: scroll;
-    /* 16 visible lines (+1 for border) */
-    height: (16em * (1 + @box_topbot_padding * 2) + 1em);
+    display: flex;
+
+    .hexasc, .annotations {
+        overflow-y: scroll;
+        /* 16 visible lines (+1 for border) */
+        height: (16em * (1 + @box_topbot_padding * 2) + 1em);
+        display: inline-block;
+        margin: 0;
+        min-height: 10em;
+        vertical-align: top;
+    }
 
     .hex, .asc, .annotations {
         display: inline-block;
         border: 1px solid #ccc;
-        margin: 0;
-        min-height: 10em;
         vertical-align: top;
         text-align: left;
     }
@@ -47,6 +53,8 @@ body {
     }
     .annotations {
         min-width: 20ch;
+        margin-left: 1ch;
+        flex: 1;
     }
     .hex, .asc {
         font-family: monospace;
@@ -82,6 +90,19 @@ body {
         }
         &.selected {
             outline: 1px solid #f60;
+        }
+    }
+
+    /* annotations */
+    .annotations .line {
+        &:before {
+            font-size: smaller;
+            content: attr(data-byte-start) " (" attr(data-offset) ", " attr(data-length) "): ";
+            color: #999;
+        }
+        &:hover, &.hover {
+            background: #ffc;
+            outline: 1px solid #fc0;
         }
     }
 }
