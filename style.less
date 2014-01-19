@@ -1,0 +1,88 @@
+/* octets per line */
+@columns: 16;
+/* octets per group (groups are separated by whitespace) */
+@group_size: 4;
+@box_side_padding: .5ex;
+@box_topbot_padding: .2em;
+/* max width of line number information (including colon and space) */
+@max_lineno_len: 9;
+
+body {
+    text-align: center;
+}
+.hex-viewer {
+    margin: auto;
+    overflow-y: auto;
+    height: 100%;
+
+    .hex, .asc, .annotations {
+        display: inline-block;
+        border: 1px solid #ccc;
+        margin: 0;
+        min-height: 10em;
+        vertical-align: top;
+        text-align: left;
+    }
+
+    // 1 2 3 4   5 6 7
+    @inter_group_spacing: ceil(@columns / @group_size) - 1ex;
+    .hex .line {
+        /* for every column, account for line no, two hex digits, left+right
+         * padding and group padding */
+        width: (@max_lineno_len + @columns * (2 + 2 * @box_side_padding) +
+                @inter_group_spacing);
+
+        /* line number */
+        &::before {
+            content: attr(data-line-no) ": ";
+            white-space: pre;
+            width: (@max_lineno_len * 1ex);
+            display: inline-block;
+            text-align: right;
+        }
+    }
+    .asc {
+        width: (@columns + @inter_group_spacing);
+    }
+    .annotations {
+        width: 20em;
+    }
+    .hex, .asc {
+        font-family: monospace;
+        font-size: larger;
+    }
+
+    /* hex / ascii boxes */
+    .hex .line span {
+        padding: @box_topbot_padding @box_side_padding;
+        margin: 0;
+        display: inline-block;
+        text-transform: uppercase;
+    }
+    .asc span {
+        padding: @box_topbot_padding 0;
+        margin: 0;
+        display: inline-block;
+        white-space: pre;
+    }
+    .hex span, .asc span {
+        /* plus 1 to add it before the start of the second and later group */
+        @group_size_plus_1: @group_size + 1;
+        &:nth-child(@{group_size}n + @{group_size_plus_1}) {
+            margin-left: 1ex;
+        }
+    }
+    .hex span, .asc span {
+        &:hover, &.hover, &.selected {
+            background: #ffc;
+            outline: 1px solid #fc0;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        &.selected {
+            outline: 1px solid #f60;
+        }
+    }
+}
+
+/* vim: set sw=4 et ts=4: */

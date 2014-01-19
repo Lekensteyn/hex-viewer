@@ -1,0 +1,37 @@
+<!doctype html>
+<html>
+<head>
+<title>Hex viewer</title>
+<link rel="stylesheet" type="text/less" href="style.less">
+<script src="less.js"></script>
+</head>
+<body>
+
+<div id="hex-viewer"></div>
+
+<script src="polyfill.js"></script>
+<script src="hex-viewer.js"></script>
+<script>
+var hexViewer = new HexViewer('hex-viewer');
+// end core, begin params
+var testData = array_to_arraybuffer(function () {
+    // fill array with 0x00 .. 0xff
+    var a = [];
+    for (var i = 0; i < 0x100; i++)
+        a[i] = i;
+    return a;
+}());
+hexViewer.loadData(testData);
+
+function array_to_arraybuffer (arr) {
+    var buffer = new ArrayBuffer(arr.length);
+    var byteView = new Uint8Array(buffer);
+    arr.forEach(function (b, i) {
+        byteView[i] = b;
+    });
+    return buffer;
+}
+</script>
+</body>
+</html>
+<!-- vim: set sw=4 et ts=4: -->
