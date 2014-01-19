@@ -2,7 +2,7 @@
 @columns: 16;
 /* octets per group (groups are separated by whitespace) */
 @group_size: 4;
-@box_side_padding: .5ex;
+@box_side_padding: .5ch;
 @box_topbot_padding: .2em;
 /* max width of line number information (including colon and space) */
 @max_lineno_len: 9;
@@ -26,7 +26,7 @@ body {
     }
 
     // 1 2 3 4   5 6 7
-    @inter_group_spacing: ceil(@columns / @group_size) - 1ex;
+    @inter_group_spacing: ceil(@columns / @group_size) - 1ch;
     .hex .line {
         /* for every column, account for line no, two hex digits, left+right
          * padding and group padding */
@@ -37,7 +37,7 @@ body {
         &::before {
             content: attr(data-line-no) ": ";
             white-space: pre;
-            width: (@max_lineno_len * 1ex);
+            width: (@max_lineno_len * 1ch);
             display: inline-block;
             text-align: right;
         }
@@ -46,7 +46,7 @@ body {
         width: (@columns + @inter_group_spacing);
     }
     .annotations {
-        width: 20em;
+        min-width: 20ch;
     }
     .hex, .asc {
         font-family: monospace;
@@ -70,7 +70,7 @@ body {
         /* plus 1 to add it before the start of the second and later group */
         @group_size_plus_1: @group_size + 1;
         &:nth-child(@{group_size}n + @{group_size_plus_1}) {
-            margin-left: 1ex;
+            margin-left: 1ch;
         }
     }
     .hex span, .asc span {

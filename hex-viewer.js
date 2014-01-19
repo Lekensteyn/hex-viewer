@@ -1,7 +1,7 @@
 var HexViewer = (function (id) {
     'use strict';
     /* note: change in CSS too */
-    const COLUMNS = 16;
+    var COLUMNS = 16;
 
     var container = document.getElementById(id);
     var hexPanel = document.createElement('div');
@@ -135,7 +135,7 @@ var HexViewer = (function (id) {
         });
 
         function handleFile(file) {
-            var reader = FileReader();
+            var reader = new FileReader();
             reader.onload = function () {
                 loadData(this.result);
             };
