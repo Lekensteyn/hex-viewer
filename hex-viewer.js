@@ -47,18 +47,25 @@ var HexViewer = (function (id) {
     function hiliteBits(offset_bit, bits) {
         var startByte, endByte;
         var end_bit = offset_bit + bits;
+
+        var annots;
+        // indexes of annotation elements just before or after selection
+        var prev_anno_i = -1, next_anno_i = end + 1;
         if (annotations) {
-            var annots = annotations.getAnnotations();
+            annots = annotations.getAnnotations();
             // annotation indexes
             var i, begin = Infinity, end = annots.length - 1;
             // find begin of annotations
             for (i = 0; i < annots.length; ++i) {
                 // if end of annotation lays in the slice (after begin of slice)
                 if (annots[i].offset + annots[i].length > offset_bit) {
+                    prev_anno_i = i;
+                    next_anno_i = prev_anno_i + 1;
                     // check if annotation is actually in the slice (i.e. if the
                     // annotation starts before the end of the slice)
                     if (annots[i].offset < end_bit) {
                         begin = i;
+                        prev_anno_i = i - 1;
                     }
                     break;
                 }
@@ -69,14 +76,23 @@ var HexViewer = (function (id) {
                     if (annots[i].offset >= end_bit) {
                         // end is last annotation that is contained in slice
                         end = i - 1;
+                        next_anno_i = i;
                         break;
                     }
                 }
                 offset_bit = annots[begin].offset;
                 end_bit = annots[end].offset + annots[end].length;
             }
+
+            // mark previous, "selected" and next annotations
+            if (prev_anno_i >= 0) {
+                annoLines[prev_anno_i].classList.add('hover-before');
+            }
             for (i = begin; i <= end; ++i) {
                 annoLines[i].classList.add('hover');
+            }
+            if (next_anno_i < annots.length) {
+                annoLines[next_anno_i].classList.add('hover-after');
             }
         }
 
@@ -86,13 +102,34 @@ var HexViewer = (function (id) {
             ascBoxes[byte_no].classList.add('hover');
             hexBoxes[byte_no].classList.add('hover');
         }
+
+        // mark bytes before and after selection
+        if (annotations) {
+            if (prev_anno_i >= 0) {
+                var prevStart = Math.floor(annots[prev_anno_i].offset / 8);
+                for (var byte_no = prevStart; byte_no < startByte; ++byte_no) {
+                    ascBoxes[byte_no].classList.add('hover-before');
+                    hexBoxes[byte_no].classList.add('hover-before');
+                }
+            }
+            if (next_anno_i < annots.length) {
+                var annot = annots[next_anno_i];
+                var nextEnd = Math.ceil((annot.offset + annot.length) / 8);
+                for (var byte_no = endByte + 1; byte_no < nextEnd; ++byte_no) {
+                    ascBoxes[byte_no].classList.add('hover-after');
+                    hexBoxes[byte_no].classList.add('hover-after');
+                }
+            }
+        }
     }
 
     function clearSelecter() {
-        var affected = container.getElementsByClassName('hover');
-        for (var i = affected.length - 1; i >= 0; --i) {
-            affected[i].classList.remove('hover');
-        }
+        ['hover', 'hover-before' ,'hover-after'].forEach(function (className) {
+            var affected = container.getElementsByClassName(className);
+            for (var i = affected.length - 1; i >= 0; --i) {
+                affected[i].classList.remove(className);
+            }
+        });
     }
 
     function togglePermSelect(boxes) {
