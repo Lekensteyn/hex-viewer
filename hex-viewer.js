@@ -62,13 +62,13 @@ var HexViewer = (function (id) {
             var i, begin = Infinity, end = annots.length - 1;
             // find begin of annotations
             for (i = 0; i < annots.length; ++i) {
-                // if end of annotation lays in the slice (after begin of slice)
-                if (annots[i].offset + annots[i].length > offset_bit) {
+                // if the annotation starts in this slice
+                if (annots[i].offset >= offset_bit) {
                     prev_anno_i = i - 1;
                     next_anno_i = prev_anno_i + 1;
                     // check if annotation is actually in the slice (i.e. if the
                     // annotation starts before the end of the slice)
-                    if (annots[i].offset < end_bit) {
+                    if (annots[i].offset < offset_bit + bits) {
                         begin = i;
                     }
                     break;
@@ -77,7 +77,8 @@ var HexViewer = (function (id) {
             // if there are annotations in range, find the end
             if (begin <= end) {
                 for (; i < annots.length; ++i) {
-                    if (annots[i].offset >= end_bit) {
+                    // if the annotation ends past the end
+                    if (annots[i].offset + annots[i].length > offset_bit + bits) {
                         // end is last annotation that is contained in slice
                         end = i - 1;
                         next_anno_i = i;
