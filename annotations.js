@@ -36,7 +36,7 @@ var Annotations = function (annots) {
     function getAnnotations() {
         // XXX: make immutable?
         return annots;
-    };
+    }
 
     // exports
     this.getAnnotations = getAnnotations;
@@ -64,7 +64,7 @@ Annotations.loadFieldsizeFormat = function (string) {
             var offsetInfo = offsetPatt.exec(line);
             if (!offsetInfo)
                 throw 'Unrecognized line: ' + line;
-            offset += parseInt(offsetInfo[1]);
+            offset += parseInt(offsetInfo[1], 16);
             return;
         }
         annots.push({
@@ -77,5 +77,19 @@ Annotations.loadFieldsizeFormat = function (string) {
     });
 
     return new Annotations(annots);
+};
+
+/**
+ * Returns an array with the first and last (exclusive) byte that gets occupied
+ * by this annotation.
+ */
+Annotations.bits_to_byterange = function (bit_begin, bit_end) {
+    var begin = Math.floor(bit_begin / 8);
+    var end = Math.ceil(bit_end / 8);
+    return [begin, end];
+};
+Annotations.annot_to_byterange = function (annot) {
+    var len = annot.offset + annot.length;
+    return Annotations.bits_to_byterange(annot.offset, len);
 };
 /* vim: set sw=4 et ts=4: */

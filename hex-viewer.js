@@ -45,7 +45,7 @@ var HexViewer = (function (id) {
     // highlight the bytes that share a bit with the slice (if the annotation
     // falls outside the slice, extend the slice)
     function hiliteBits(offset_bit, bits) {
-        var startByte, endByte;
+        var byteRange;
         var end_bit = offset_bit + bits;
 
         var annots;
@@ -59,13 +59,12 @@ var HexViewer = (function (id) {
             for (i = 0; i < annots.length; ++i) {
                 // if end of annotation lays in the slice (after begin of slice)
                 if (annots[i].offset + annots[i].length > offset_bit) {
-                    prev_anno_i = i;
+                    prev_anno_i = i - 1;
                     next_anno_i = prev_anno_i + 1;
                     // check if annotation is actually in the slice (i.e. if the
                     // annotation starts before the end of the slice)
                     if (annots[i].offset < end_bit) {
                         begin = i;
-                        prev_anno_i = i - 1;
                     }
                     break;
                 }
@@ -96,30 +95,28 @@ var HexViewer = (function (id) {
             }
         }
 
-        startByte = Math.floor(offset_bit / 8);
-        endByte = Math.ceil(end_bit / 8) - 1;
-        for (var byte_no = startByte; byte_no <= endByte; ++byte_no) {
-            ascBoxes[byte_no].classList.add('hover');
-            hexBoxes[byte_no].classList.add('hover');
-        }
+        byteRange = Annotations.bits_to_byterange(offset_bit, end_bit);
+        hiliteByteRange(byteRange[0], byteRange[1], 'hover');
 
         // mark bytes before and after selection
         if (annotations) {
             if (prev_anno_i >= 0) {
-                var prevStart = Math.floor(annots[prev_anno_i].offset / 8);
-                for (var byte_no = prevStart; byte_no < startByte; ++byte_no) {
-                    ascBoxes[byte_no].classList.add('hover-before');
-                    hexBoxes[byte_no].classList.add('hover-before');
-                }
+                byteRange = Annotations.annot_to_byterange(annots[prev_anno_i]);
+                hiliteByteRange(byteRange[0], byteRange[1], 'hover-before');
             }
             if (next_anno_i < annots.length) {
-                var annot = annots[next_anno_i];
-                var nextEnd = Math.ceil((annot.offset + annot.length) / 8);
-                for (var byte_no = endByte + 1; byte_no < nextEnd; ++byte_no) {
-                    ascBoxes[byte_no].classList.add('hover-after');
-                    hexBoxes[byte_no].classList.add('hover-after');
-                }
+                byteRange = Annotations.annot_to_byterange(annots[next_anno_i]);
+                hiliteByteRange(byteRange[0], byteRange[1], 'hover-after');
             }
+        }
+    }
+
+    function hiliteByteRange(begin, end, className) {
+        // annotations may be longer than the bytes
+        end = Math.min(ascBoxes.length, end);
+        for (var byte_no = begin; byte_no < end; ++byte_no) {
+            ascBoxes[byte_no].classList.add(className);
+            hexBoxes[byte_no].classList.add(className);
         }
     }
 
@@ -161,8 +158,7 @@ var HexViewer = (function (id) {
             return;
         }
         var begin = Math.floor(line.dataset.offset / 8) * 8;
-        // byteEnd is the last exclusive byte
-        var len = line.dataset.byteEnd - line.dataset.byteStart + 1;
+        var len = line.dataset.byteEnd - line.dataset.byteStart;
         hiliteBits(8 * line.dataset.byteStart, 8 * len);
     });
     hexPanel.addEventListener('mouseout', clearSelecter);
@@ -264,10 +260,9 @@ var HexViewer = (function (id) {
             line.dataset.offset = annot.offset;
             line.dataset.length = annot.length;
 
-            line.dataset.byteStart = Math.floor(annot.offset / 8);
-            var lastBit = annot.offset + annot.length;
-            // last byte including the annotation
-            line.dataset.byteEnd = Math.ceil(lastBit / 8) - 1;
+            var byteRange = Annotations.annot_to_byterange(annot);
+            line.dataset.byteStart = byteRange[0];
+            line.dataset.byteEnd = byteRange[1];
 
             line.textContent = annot.name + ': ' + annot.desc;
 
