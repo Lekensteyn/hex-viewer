@@ -24,7 +24,6 @@ var HexViewer = (function (id) {
     // contains HTMLElements for the hex and ascii boxes
     var hexBoxes = [];
     var ascBoxes = [];
-    var selectedBytes = [];
 
     // contains HTMLElements for annotations
     var annoLines = [];
@@ -51,9 +50,12 @@ var HexViewer = (function (id) {
 
     // highlight the bytes that share a bit with the slice (if the annotation
     // falls outside the slice, extend the slice)
-    function hiliteBits(offset_bit, bits) {
+    function hiliteBits(offset_bit, bits, baseCls) {
         var byteRange;
         var end_bit = offset_bit + bits;
+
+        if (!baseCls)
+            baseCls = 'hover';
 
         var annots;
         // indexes of annotation elements just before or after selection
@@ -92,28 +94,28 @@ var HexViewer = (function (id) {
 
             // mark previous, "selected" and next annotations
             if (prev_anno_i >= 0) {
-                annoLines[prev_anno_i].classList.add('hover-before');
+                annoLines[prev_anno_i].classList.add(baseCls + '-before');
             }
             for (i = begin; i <= end; ++i) {
-                annoLines[i].classList.add('hover');
+                annoLines[i].classList.add(baseCls);
             }
             if (next_anno_i < annots.length) {
-                annoLines[next_anno_i].classList.add('hover-after');
+                annoLines[next_anno_i].classList.add(baseCls + '-after');
             }
         }
 
         byteRange = Annotations.bits_to_byterange(offset_bit, end_bit);
-        hiliteByteRange(byteRange[0], byteRange[1], 'hover');
+        hiliteByteRange(byteRange[0], byteRange[1], baseCls);
 
         // mark bytes before and after selection
         if (annotations) {
             if (prev_anno_i >= 0) {
                 byteRange = Annotations.annot_to_byterange(annots[prev_anno_i]);
-                hiliteByteRange(byteRange[0], byteRange[1], 'hover-before');
+                hiliteByteRange(byteRange[0], byteRange[1], baseCls + '-before');
             }
             if (next_anno_i < annots.length) {
                 byteRange = Annotations.annot_to_byterange(annots[next_anno_i]);
-                hiliteByteRange(byteRange[0], byteRange[1], 'hover-after');
+                hiliteByteRange(byteRange[0], byteRange[1], baseCls + '-after');
             }
         }
     }
@@ -128,7 +130,11 @@ var HexViewer = (function (id) {
     }
 
     function clearSelecter() {
-        ['hover', 'hover-before' ,'hover-after'].forEach(function (className) {
+        removeSelectionClasses('hover');
+    }
+
+    function removeSelectionClasses(base) {
+        [base, base + '-before', base + '-after'].forEach(function (className) {
             var affected = container.getElementsByClassName(className);
             for (var i = affected.length - 1; i >= 0; --i) {
                 affected[i].classList.remove(className);
@@ -142,17 +148,11 @@ var HexViewer = (function (id) {
             if (byte_no == -1) {
                 return;
             }
-            var sel_i = selectedBytes.indexOf(byte_no);
-            var action;
-            if (sel_i == -1) { // not selected before
-                selectedBytes.push(byte_no);
-                action = 'add';
-            } else {
-                selectedBytes.splice(sel_i, 1);
-                action = 'remove';
+            var isSelected = boxes[byte_no].classList.contains('selected');
+            removeSelectionClasses('selected');
+            if (!isSelected) {
+                hiliteBits(8 * byte_no, 8, 'selected');
             }
-            hexBoxes[byte_no].classList[action]('selected');
-            ascBoxes[byte_no].classList[action]('selected');
         };
     }
 

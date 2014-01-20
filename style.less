@@ -100,13 +100,7 @@ body {
     }
     .hex span, .asc span {
         &:hover, &.hover, &.selected {
-            background: #ffc;
-            outline: 1px solid #fc0;
-            cursor: pointer;
             font-weight: bold;
-        }
-        &.selected {
-            outline: 1px solid #f60;
         }
     }
 
@@ -117,10 +111,6 @@ body {
             content: attr(data-byte-start) " (" attr(data-offset) ", " attr(data-length) "): ";
             color: #999;
         }
-        &:hover, &.hover {
-            background: #ffc;
-            outline: 1px solid #fc0;
-        }
     }
     .hex span, .asc span,
     .annotations .line {
@@ -129,6 +119,14 @@ body {
         }
         &.hover-after {
             background: #cfc;
+        }
+        &:hover, &.hover {
+            background: #ffc;
+            outline: 1px solid #fc0;
+        }
+        &.selected {
+            background: #ff9;
+            outline: 1px solid #f60;
         }
     }
 }
