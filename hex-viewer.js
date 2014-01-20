@@ -39,6 +39,13 @@ var HexViewer = (function (id) {
                 return;
             }
             hiliteBits(8 * byte_no, 8);
+            ['hover-before' ,'hover', 'hover-after'].some(function (className) {
+                var elms = annoPanel.getElementsByClassName(className);
+                if (elms.length) {
+                    centerElement(elms[0]);
+                }
+                return elms.length > 0;
+            });
         };
     }
 
@@ -160,6 +167,8 @@ var HexViewer = (function (id) {
         var begin = Math.floor(line.dataset.offset / 8) * 8;
         var len = line.dataset.byteEnd - line.dataset.byteStart;
         hiliteBits(8 * line.dataset.byteStart, 8 * len);
+        var end = Math.min(ascBoxes.length, begin + len);
+        centerElement(ascBoxes[end > 0 ? end - 1 : 0]);
     });
     hexPanel.addEventListener('mouseout', clearSelecter);
     ascPanel.addEventListener('mouseout', clearSelecter);
@@ -173,6 +182,13 @@ var HexViewer = (function (id) {
         }
         // not a printable ASCII character, ignore.
         return '.';
+    }
+
+    // center an element on screen if not already visible
+    function centerElement(elm) {
+        if (elm.previousSibling)
+            elm = elm.previousSibling;
+        elm.scrollIntoView();
     }
 
     // Loads an ArrayBuffer into the page (hex, ascii)
