@@ -3,6 +3,9 @@ var HexViewer = (function (id) {
     /* note: change in CSS too */
     var COLUMNS = 16;
 
+    /* prefs */
+    var autoCenter = true;
+
     var container = document.getElementById(id);
     var hexascPanel = document.createElement('div');
     var hexPanel = document.createElement('div');
@@ -30,6 +33,17 @@ var HexViewer = (function (id) {
     // annotations object
     var annotations;
 
+    function annosIntoView() {
+        ['hover-before' ,'hover', 'hover-after'].some(function (className) {
+            var elms = annoPanel.getElementsByClassName(className);
+            if (elms.length) {
+                centerElement(elms[0]);
+            }
+            // stop once an centerable element is found
+            return elms.length > 0;
+        });
+    }
+
     // boxes_one contains the event source element
     function addSelecter(src_boxes) {
         return function (ev) {
@@ -38,13 +52,9 @@ var HexViewer = (function (id) {
                 return;
             }
             hiliteBits(8 * byte_no, 8);
-            ['hover-before' ,'hover', 'hover-after'].some(function (className) {
-                var elms = annoPanel.getElementsByClassName(className);
-                if (elms.length) {
-                    centerElement(elms[0]);
-                }
-                return elms.length > 0;
-            });
+            if (autoCenter) {
+                annosIntoView();
+            }
         };
     }
 
@@ -152,6 +162,11 @@ var HexViewer = (function (id) {
             removeSelectionClasses('selected');
             if (!isSelected) {
                 hiliteBits(8 * byte_no, 8, 'selected');
+                annosIntoView();
+                autoCenter = false;
+            } else {
+                // no selection - feel free to center!
+                autoCenter = true;
             }
         };
     }
@@ -167,8 +182,10 @@ var HexViewer = (function (id) {
         var begin = Math.floor(line.dataset.offset / 8) * 8;
         var len = line.dataset.byteEnd - line.dataset.byteStart;
         hiliteBits(8 * line.dataset.byteStart, 8 * len);
-        var end = Math.min(ascBoxes.length, begin + len);
-        centerElement(ascBoxes[end > 0 ? end - 1 : 0]);
+        if (autoCenter) {
+            var begin_i = Math.min(ascBoxes.length - 1, begin);
+            centerElement(ascBoxes[begin_i]);
+        }
     });
     hexPanel.addEventListener('mouseout', clearSelecter);
     ascPanel.addEventListener('mouseout', clearSelecter);
