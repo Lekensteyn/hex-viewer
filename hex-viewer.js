@@ -48,7 +48,6 @@ var HexViewer = (function (id) {
     // falls outside the slice, extend the slice)
     function hiliteBits(offset_bit, bits, baseCls) {
         var byteRange;
-        var end_bit = offset_bit + bits;
 
         if (!baseCls)
             baseCls = 'hover';
@@ -86,7 +85,7 @@ var HexViewer = (function (id) {
                     }
                 }
                 offset_bit = annots[begin].offset;
-                end_bit = annots[end].offset + annots[end].length;
+                bits = annots[end].length;
             }
 
             // mark previous, "selected" and next annotations
@@ -101,28 +100,47 @@ var HexViewer = (function (id) {
             }
         }
 
-        byteRange = Annotations.bits_to_byterange(offset_bit, end_bit);
-        hiliteByteRange(byteRange[0], byteRange[1], baseCls);
+        // selected bits range
+        hiliteBytesBits(offset_bit, bits, baseCls);
 
         // mark bytes before and after selection
         if (annotations) {
+            var annot;
             if (prev_anno_i >= 0) {
-                byteRange = Annotations.annot_to_byterange(annots[prev_anno_i]);
-                hiliteByteRange(byteRange[0], byteRange[1], baseCls + '-before');
+                annot = annots[prev_anno_i];
+                hiliteBytesBits(annot.offset, annot.length, baseCls + '-before');
             }
             if (next_anno_i < annots.length) {
-                byteRange = Annotations.annot_to_byterange(annots[next_anno_i]);
-                hiliteByteRange(byteRange[0], byteRange[1], baseCls + '-after');
+                annot = annots[next_anno_i];
+                hiliteBytesBits(annot.offset, annot.length, baseCls + '-after');
             }
         }
     }
 
-    function hiliteByteRange(begin, end, className) {
+    function hiliteBytesBits(offset_bit, bits, className) {
+        var begin = offset_bit / 8;
         // annotations may be longer than the bytes
-        end = Math.min(ascBoxes.length, end);
-        for (var byte_no = begin; byte_no < end; ++byte_no) {
+        var end_bit = Math.min(8 * ascBoxes.length, offset_bit + bits);
+
+        if (offset_bit >= end_bit) {
+            return;
+        }
+
+        if (offset_bit % 8) {
+            begin = Math.floor(begin);
+            ascBoxes[begin].classList.add('partial');
+            hexBoxes[begin].classList.add('partial');
+        }
+
+        for (var byte_no = begin; byte_no < end_bit / 8; ++byte_no) {
             ascBoxes[byte_no].classList.add(className);
             hexBoxes[byte_no].classList.add(className);
+        }
+
+        if (end_bit % 8) {
+            var end = Math.floor(end_bit / 8);
+            ascBoxes[end].classList.add('partial');
+            hexBoxes[end].classList.add('partial');
         }
     }
 
@@ -187,7 +205,14 @@ var HexViewer = (function (id) {
         [base, base + '-before', base + '-after'].forEach(function (className) {
             var affected = container.getElementsByClassName(className);
             for (var i = affected.length - 1; i >= 0; --i) {
-                affected[i].classList.remove(className);
+                var classList = affected[i].classList;
+                // HACK: drop 'partial' if (1) the class to be removed is the
+                // selection or (2) the class to be removed is not the selection
+                // and the box is not part of a selection
+                if (base === 'selected' || !classList.contains('selected')) {
+                    classList.remove('partial');
+                }
+                classList.remove(className);
             }
         });
     }
@@ -210,6 +235,8 @@ var HexViewer = (function (id) {
                 }
                 autoCenter = false;
             } else {
+                // TODO: if 'partial' is kept, then the refresh is not needed
+                hiliteBits(8 * byteInfo[0], 8 * byteInfo[1], 'hover');
                 // no selection - feel free to center!
                 autoCenter = true;
             }
