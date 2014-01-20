@@ -44,20 +44,6 @@ var HexViewer = (function (id) {
         });
     }
 
-    // boxes_one contains the event source element
-    function addSelecter(src_boxes) {
-        return function (ev) {
-            var byte_no = src_boxes.indexOf(ev.target);
-            if (byte_no == -1) {
-                return;
-            }
-            hiliteBits(8 * byte_no, 8);
-            if (autoCenter) {
-                annosIntoView();
-            }
-        };
-    }
-
     // highlight the bytes that share a bit with the slice (if the annotation
     // falls outside the slice, extend the slice)
     function hiliteBits(offset_bit, bits, baseCls) {
@@ -139,6 +125,44 @@ var HexViewer = (function (id) {
         }
     }
 
+    // returns begin byte and length (in bytes) of the element (byte in boxes or
+    // annotations). null if the elm element is invalid.
+    function findElmBytes(src_boxes, elm) {
+        if (src_boxes) {
+            var byte_no = src_boxes.indexOf(elm);
+            if (byte_no == -1) {
+                return null;
+            }
+            return [byte_no, 1];
+        } else {
+            if (!elm.classList.contains('line')) {
+                return null;
+            }
+            var begin = Math.floor(elm.dataset.offset / 8);
+            var len = elm.dataset.byteEnd - elm.dataset.byteStart;
+            return [begin, len];
+        }
+    }
+
+    // generated listener callback to highlight boxes and annotations
+    function addSelecter(src_boxes) {
+        return function (ev) {
+            var byteInfo = findElmBytes(src_boxes, ev.target);
+            if (!byteInfo) {
+                return;
+            }
+            hiliteBits(8 * byteInfo[0], 8 * byteInfo[1]);
+            if (autoCenter) {
+                if (src_boxes) { // bytes
+                    annosIntoView();
+                } else { // annotations
+                    var begin_i = Math.min(ascBoxes.length - 1, byteInfo[0]);
+                    centerElement(ascBoxes[begin_i]);
+                }
+            }
+        };
+    }
+
     function clearSelecter() {
         removeSelectionClasses('hover');
     }
@@ -154,15 +178,20 @@ var HexViewer = (function (id) {
 
     function togglePermSelect(boxes) {
         return function (ev) {
-            var byte_no = boxes.indexOf(ev.target);
-            if (byte_no == -1) {
+            var byteInfo = findElmBytes(boxes, ev.target);
+            if (!byteInfo) {
                 return;
             }
-            var isSelected = boxes[byte_no].classList.contains('selected');
+            var isSelected = ev.target.classList.contains('selected');
             removeSelectionClasses('selected');
             if (!isSelected) {
-                hiliteBits(8 * byte_no, 8, 'selected');
-                annosIntoView();
+                hiliteBits(8 * byteInfo[0], 8 * byteInfo[1], 'selected');
+                if (boxes) { // bytes
+                    annosIntoView();
+                } else { // annotations
+                    var begin_i = Math.min(ascBoxes.length - 1, byteInfo[0]);
+                    centerElement(ascBoxes[begin_i]);
+                }
                 autoCenter = false;
             } else {
                 // no selection - feel free to center!
@@ -173,25 +202,13 @@ var HexViewer = (function (id) {
 
     hexPanel.addEventListener('mouseover', addSelecter(hexBoxes));
     ascPanel.addEventListener('mouseover', addSelecter(ascBoxes));
-    annoPanel.addEventListener('mouseover', function (ev) {
-        // mega-dumb quick-n-dirty impl.
-        var line = ev.target;
-        if (!line.classList.contains('line')) {
-            return;
-        }
-        var begin = Math.floor(line.dataset.offset / 8) * 8;
-        var len = line.dataset.byteEnd - line.dataset.byteStart;
-        hiliteBits(8 * line.dataset.byteStart, 8 * len);
-        if (autoCenter) {
-            var begin_i = Math.min(ascBoxes.length - 1, begin);
-            centerElement(ascBoxes[begin_i]);
-        }
-    });
+    annoPanel.addEventListener('mouseover', addSelecter(null));
     hexPanel.addEventListener('mouseout', clearSelecter);
     ascPanel.addEventListener('mouseout', clearSelecter);
     annoPanel.addEventListener('mouseout', clearSelecter);
     hexPanel.addEventListener('click', togglePermSelect(hexBoxes));
     ascPanel.addEventListener('click', togglePermSelect(ascBoxes));
+    annoPanel.addEventListener('click', togglePermSelect(null));
 
     function to_ascii(b) {
         if (b >= 0x20 && b < 0x7F) {
