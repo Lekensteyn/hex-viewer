@@ -7,9 +7,27 @@
 /* max width of line number information (including colon and space) */
 @max_lineno_len: 9;
 
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
 body {
     text-align: center;
 }
+
+#page {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+
+    .hex-viewer {
+        flex: 1;
+    }
+    .controls {
+    }
+}
+
 .hex-viewer {
     margin: auto;
     display: flex;
@@ -17,10 +35,9 @@ body {
     .hexasc, .annotations {
         overflow-y: scroll;
         /* 16 visible lines (+1 for border) */
-        height: (16em * (1 + @box_topbot_padding * 2) + 1em);
+        min-height: (16em * (1 + @box_topbot_padding * 2) + 1em);
         display: inline-block;
         margin: 0;
-        min-height: 10em;
         vertical-align: top;
     }
 
