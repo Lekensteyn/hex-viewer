@@ -133,6 +133,21 @@ var HexViewer = (function (id) {
             if (byte_no == -1) {
                 return null;
             }
+            // find first annotation that contains (part of) this byte
+            if (annotations) {
+                var annots = annotations.getAnnotations();
+                for (var i = 0; i < annots.length; ++i) {
+                    var annot = annots[i];
+                    var abegin = annot.offset;
+                    var aend = abegin + annot.length;
+                    if (8 * byte_no < aend && abegin < 8 * (byte_no + 1)) {
+                        var range = Annotations.annot_to_byterange(annot);
+                        return [range[0], range[1] - range[0]];
+                    }
+                }
+            }
+
+            // fallback to the whole byte
             return [byte_no, 1];
         } else {
             if (!elm.classList.contains('line')) {
