@@ -34,14 +34,16 @@ var HexViewer = (function (id) {
     var annotations;
 
     function annosIntoView() {
-        ['hover-before' ,'hover', 'hover-after'].some(function (className) {
-            var elms = annoPanel.getElementsByClassName(className);
-            if (elms.length) {
-                centerElement(elms[0]);
-            }
-            // stop once an centerable element is found
-            return elms.length > 0;
-        });
+        var elms = annoPanel.querySelectorAll('.hover-before, .hover, .hover-after');
+        console.log(elms.length);
+        if (elms.length) {
+            centerElement(elms[0], elms[elms.length - 1]);
+        }
+    }
+    function bytesIntoView(begin, end) {
+        begin = Math.min(ascBoxes.length - 1, begin);
+        end = Math.min(ascBoxes.length - 1, end);
+        centerElement(ascBoxes[begin], ascBoxes[end]);
     }
 
     // highlight the bytes that share a bit with the slice (if the annotation
@@ -190,8 +192,7 @@ var HexViewer = (function (id) {
                 if (src_boxes) { // bytes
                     annosIntoView();
                 } else { // annotations
-                    var begin_i = Math.min(ascBoxes.length - 1, byteInfo[0]);
-                    centerElement(ascBoxes[begin_i]);
+                    bytesIntoView(byteInfo[0], byteInfo[0] + byteInfo[1]);
                 }
             }
         };
@@ -230,8 +231,7 @@ var HexViewer = (function (id) {
                 if (boxes) { // bytes
                     annosIntoView();
                 } else { // annotations
-                    var begin_i = Math.min(ascBoxes.length - 1, byteInfo[0]);
-                    centerElement(ascBoxes[begin_i]);
+                    bytesIntoView(byteInfo[0], byteInfo[0] + byteInfo[1]);
                 }
                 autoCenter = false;
             } else {
@@ -261,11 +261,26 @@ var HexViewer = (function (id) {
         return '.';
     }
 
-    // center an element on screen if not already visible
-    function centerElement(elm) {
-        if (elm.previousSibling)
-            elm = elm.previousSibling;
-        elm.scrollIntoView();
+    // center elements on screen if not already visible. elm and bottomElm must
+    // have the same parent, elm must be located before bottomElm.
+    function centerElement(elm, bottomElm) {
+        var par = elm.parentNode;
+        if (!bottomElm) bottomElm = elm;
+        var parRect = par.getBoundingClientRect();
+        var topRect = elm.getBoundingClientRect();
+        var botRect = bottomElm.getBoundingClientRect();
+
+        var topDiff = topRect.top - parRect.top;
+        var botDiff = botRect.bottom - parRect.bottom;
+        // topDiff is negative if element is clipped at top by its parent
+        if (topDiff < 0) {
+            // so scroll up a little bit (remove the diff)
+            par.scrollTop += topDiff;
+        } else if (botDiff > 0) {
+            // botDiff is positive if the element bottom gets past its parent
+            // bottom, so scroll down
+            par.scrollTop += botDiff;
+        }
     }
 
     // Loads an ArrayBuffer into the page (hex, ascii)
