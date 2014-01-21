@@ -87,7 +87,7 @@ var HexViewer = (function (id) {
                     }
                 }
                 offset_bit = annots[begin].offset;
-                bits = annots[end].length;
+                bits = annots[end].offset - offset_bit + annots[end].length;
             }
 
             // mark previous, "selected" and next annotations
