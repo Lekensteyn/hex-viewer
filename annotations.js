@@ -64,7 +64,7 @@ Annotations.loadFieldsizeFormat = function (string) {
             var offsetInfo = offsetPatt.exec(line);
             if (!offsetInfo)
                 throw 'Unrecognized line: ' + line;
-            offset += parseInt(offsetInfo[1], 16);
+            offset = 8 * parseInt(offsetInfo[1], 16);
             return;
         }
         annots.push({
