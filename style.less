@@ -32,13 +32,30 @@ body {
     margin: auto;
     display: flex;
 
+    .bits-n-bytes, .annotations {
+        min-height: (16em * (1 + @box_topbot_padding * 2) + 1em);
+    }
     .hexasc, .annotations {
         overflow-y: scroll;
         /* 16 visible lines (+1 for border) */
-        min-height: (16em * (1 + @box_topbot_padding * 2) + 1em);
         display: inline-block;
         margin: 0;
         vertical-align: top;
+    }
+
+    /* positioning */
+    .bits-n-bytes {
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+
+        /* should occupy remaining space after removing bits */
+        .hexasc {
+            flex: 1;
+        }
+        .bits {
+            margin: auto;
+        }
     }
 
     .hex, .asc, .annotations {
@@ -101,6 +118,49 @@ body {
     .hex span, .asc span {
         &:hover, &.hover, &.selected {
             font-weight: bold;
+        }
+    }
+
+    /* slices of bits */
+    .bits {
+        font-family: monospace;
+        font-size: larger;
+        border: 1px solid #ccc;
+        padding: .5em 1ch;
+        overflow: auto;
+        white-space: pre-wrap;
+        text-align: left;
+
+        /* ignore padding for width */
+        -moz-box-sizing: box-model;
+        box-sizing: box-model;
+        /* at most 8 octets on a row, padding */
+        width: (8ch * (8 + 1) + 2);
+
+        /* do not show ugly empty borders */
+        &:empty {
+            display: none;
+        }
+
+        /* separate bytes */
+        span:nth-child(8n + 8):after {
+            content: ' ';
+        }
+        /* add extra padding after the fourth byte on a line */
+        span:nth-child(64n + 32):after {
+            content: '  ';
+        }
+        span {
+            color: #999;
+        }
+        span.odd, span.even {
+            font-weight: bold;
+        }
+        span.odd {
+            color: #d4a;
+        }
+        span.even {
+            color: #0a7;
         }
     }
 

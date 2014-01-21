@@ -1,3 +1,5 @@
 - partially read file
 - select highlight (not click)
-- annotations
+- bit positioning
+- re-order messy CSS
+- bit hilite is implemented quite messy. Refactor to allow hover too.

@@ -6,24 +6,40 @@ var HexViewer = (function (id) {
     /* prefs */
     var autoCenter = true;
 
+    // .hex-viewer
+    // + .bits-n-bytes
+    //   + .hexasc
+    //     + .hex
+    //     + .asc
+    //   + .bits
+    // + .annotations
     var container = document.getElementById(id);
+    var bnbPanel = document.createElement('div');
     var hexascPanel = document.createElement('div');
     var hexPanel = document.createElement('div');
+    var bitPanel = document.createElement('div');
     var ascPanel = document.createElement('div');
     var annoPanel = document.createElement('div');
     container.className = 'hex-viewer';
+    bnbPanel.className = 'bits-n-bytes';
     hexascPanel.className = 'hexasc';
     hexPanel.className = 'hex';
     ascPanel.className = 'asc';
+    bitPanel.className = 'bits';
     annoPanel.className = 'annotations';
 
     [hexPanel, ascPanel].forEach(function (panel) {
         hexascPanel.appendChild(panel);
     });
-    [hexascPanel, annoPanel].forEach(function (panel) {
+    [hexascPanel, bitPanel].forEach(function (panel) {
+        bnbPanel.appendChild(panel);
+    });
+    [bnbPanel, annoPanel].forEach(function (panel) {
         container.appendChild(panel);
     });
 
+    // ByteView of the data buffer
+    var byteView;
     // contains HTMLElements for the hex and ascii boxes
     var hexBoxes = [];
     var ascBoxes = [];
@@ -44,6 +60,44 @@ var HexViewer = (function (id) {
         begin = Math.min(ascBoxes.length - 1, begin);
         end = Math.min(ascBoxes.length - 1, end);
         centerElement(ascBoxes[begin], ascBoxes[end]);
+    }
+
+    function hiliteAnnotBits(annots, begin_i, end_i) {
+        var annot_i = begin_i;
+        var beginByte = Math.floor(annots[begin_i].offset / 8);
+        var endByte = Math.ceil((annots[end_i].offset + annots[end_i].length) / 8);
+        endByte = Math.min(endByte, byteView.byteLength);
+
+        bitPanel.innerHTML = '';
+        var bitFragment = document.createDocumentFragment();
+        var in_slice = false, slice = -1;
+        for (var b = beginByte; b < endByte; ++b) {
+            var byteData = byteView[b];
+            for (var bi = 7; bi >= 0; --bi) {
+                if (8 * b + (7 - bi) == annots[annot_i].offset) {
+                    in_slice = true;
+                    ++slice;
+                }
+
+                var bitBox = document.createElement('span');
+                if (in_slice) {
+                    bitBox.className = slice % 2 ? 'odd' : 'even';
+                }
+                bitBox.textContent = byteData & (1 << bi) ? 1 : 0;
+                bitFragment.appendChild(bitBox);
+
+                // check following bit
+                var endBit = annots[annot_i].offset + annots[annot_i].length;
+                if (in_slice && 8 * b + (8 - bi) == endBit) {
+                    in_slice = false;
+                    if (annot_i < end_i) {
+                        ++annot_i;
+                    }
+                }
+            }
+        }
+
+        bitPanel.appendChild(bitFragment);
     }
 
     // highlight the bytes that share a bit with the slice (if the annotation
@@ -88,6 +142,11 @@ var HexViewer = (function (id) {
                 }
                 offset_bit = annots[begin].offset;
                 bits = annots[end].offset - offset_bit + annots[end].length;
+
+                // TODO: consider marking on hover too
+                if (baseCls === 'selected') {
+                    hiliteAnnotBits(annots, begin, end);
+                }
             }
 
             // mark previous, "selected" and next annotations
@@ -237,6 +296,8 @@ var HexViewer = (function (id) {
             } else {
                 // TODO: if 'partial' is kept, then the refresh is not needed
                 hiliteBits(8 * byteInfo[0], 8 * byteInfo[1], 'hover');
+                // no selection, no bits to highlight
+                bitPanel.innerHTML = '';
                 // no selection - feel free to center!
                 autoCenter = true;
             }
@@ -286,7 +347,7 @@ var HexViewer = (function (id) {
     // Loads an ArrayBuffer into the page (hex, ascii)
     function loadData(buffer) {
         // bytes per line
-        var byteView = new Uint8Array(buffer);
+        byteView = new Uint8Array(buffer);
 
         hexPanel.innerHTML = '';
         ascPanel.innerHTML = '';
