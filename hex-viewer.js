@@ -395,23 +395,6 @@ var HexViewer = (function (id) {
         ascPanel.appendChild(ascFragment);
     }
 
-    function handleFilePicker(id) {
-        var fileInput = document.getElementById(id);
-        fileInput.addEventListener('change', function () {
-            if (this.files.length > 0) {
-                handleFile(this.files[0]);
-            }
-        });
-
-        function handleFile(file) {
-            var reader = new FileReader();
-            reader.onload = function () {
-                loadData(this.result);
-            };
-            reader.readAsArrayBuffer(file);
-        }
-    }
-
     /* annotations related stuff */
 
     // annots is an Annotations instance

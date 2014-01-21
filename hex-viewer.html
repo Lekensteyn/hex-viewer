@@ -11,8 +11,11 @@
 <div id="hex-viewer"></div>
 
 <p class="controls">
-<label for="file-picker">Open file</label>
+<label for="file-picker">Open binary</label>
 <input type="file" id="file-picker">
+
+<label for="file-picker2">Open annotations</label>
+<input type="file" id="file-picker2">
 </p>
 </div>
 
@@ -31,12 +34,40 @@ var testData = array_to_arraybuffer(function () {
 }());
 //hexViewer.loadData(testData);
 loadArrayBuffer('test.bin', hexViewer.loadData.bind(hexViewer));
-loadString('test.txt', function (text) {
-    var annots = Annotations.loadFieldsizeFormat(text);
-    hexViewer.setAnnotations(annots);
-});
+loadString('test.txt', setAnnotations);
 
-hexViewer.handleFilePicker('file-picker');
+function setAnnotations(text) {
+    try {
+        var annots = Annotations.loadFieldsizeFormat(text);
+    } catch (ex) {
+        alert("Annotations parse error: " + ex);
+        return;
+    }
+    hexViewer.setAnnotations(annots);
+}
+
+handleFilePicker('file-picker', hexViewer.loadData.bind(hexViewer));
+handleFilePicker('file-picker2', setAnnotations, 'Text');
+
+function handleFilePicker(id, loadData, type) {
+    type = type || 'ArrayBuffer';
+
+    var fileInput = document.getElementById(id);
+    fileInput.addEventListener('change', function () {
+        if (this.files.length > 0) {
+            handleFile(this.files[0]);
+        }
+    });
+
+    function handleFile(file) {
+        var reader = new FileReader();
+        reader.onload = function () {
+            loadData(this.result);
+        };
+        reader['readAs' + type](file);
+    }
+}
+
 
 function array_to_arraybuffer (arr) {
     var buffer = new ArrayBuffer(arr.length);
