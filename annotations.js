@@ -51,8 +51,8 @@ Annotations.loadFieldsizeFormat = function (string) {
     // offset in bits
     var offset = 0;
     // [ name, size, desc ]
-    var infoPatt = /^([\w ]{4}), *(\d+), *(?:\/\/ byte 0x[\da-f]+ +bit \d+ +(.+) *)?$/i;
-    var offsetPatt = /^Offset *\((0x[\da-f]+)\),/i;
+    var infoPatt = /^\s*([\w ]{4}), *(\d+)(?:, *(?:\/\/ byte 0x[\da-f]+ +bit \d+ +(.+))?)? *$/i;
+    var offsetPatt = /^\s*Offset *\((0x[\da-f]+)\),/i;
 
     string.split('\n').forEach(function (line) {
         // skip empty lines
