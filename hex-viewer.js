@@ -51,7 +51,6 @@ var HexViewer = (function (id) {
 
     function annosIntoView() {
         var elms = annoPanel.querySelectorAll('.hover-before, .hover, .hover-after');
-        console.log(elms.length);
         if (elms.length) {
             centerElement(elms[0], elms[elms.length - 1]);
         }
