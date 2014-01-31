@@ -1,5 +1,7 @@
-- partially read file
+- partially read file (such that the browser does not explode from memory usage
+  and DOM nodes).
 - select highlight (not click)
 - bit positioning
 - re-order messy CSS
 - bit hilite is implemented quite messy. Refactor to allow hover too.
+- endianness (ADP / BAT0 reverse order)
