@@ -4,6 +4,12 @@
 <title>Hex viewer</title>
 <link rel="stylesheet" type="text/less" href="style.less">
 <script src="less.js"></script>
+<script>
+// fallback if a local less.js file cannot be loaded.
+window.less || document.write('<script src="' +
+'https://cdnjs.cloudflare.com/ajax/libs/less.js/1.6.1/less.min.js"><\/script>');
+window.less || alert('hex-viewer: compile style.less manually or find a less.js');
+</script>
 </head>
 <body>
 
