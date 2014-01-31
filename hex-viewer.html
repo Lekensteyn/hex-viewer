@@ -32,9 +32,17 @@ var testData = array_to_arraybuffer(function () {
         a[i] = i;
     return a;
 }());
-//hexViewer.loadData(testData);
-loadArrayBuffer('test.bin', hexViewer.loadData.bind(hexViewer));
-loadString('test.txt', setAnnotations);
+try {
+    loadArrayBuffer('test.bin', hexViewer.loadData.bind(hexViewer));
+} catch (ex) {
+    console.log('Failed to load test.bin: ', ex);
+    hexViewer.loadData(testData);
+}
+try {
+    loadString('test.txt', setAnnotations);
+} catch (ex) {
+    console.log('Failed to load annotations from test.txt: ', ex);
+}
 
 function setAnnotations(text) {
     try {
